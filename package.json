@@ -30,6 +30,7 @@
     "release": "npm version patch -m \"chore: release v%s [release]\" && git push --follow-tags",
     "smithery:publish": "node scripts/publish-smithery.mjs",
     "smoke": "node --import tsx tests/smoke-stdio.ts",
+    "smoke:source": "tsx --tsconfig tests/tsconfig.source.json tests/smoke-stdio.ts --source",
     "version": "node scripts/sync-version.mjs && npm run verify:versions && git add server.json mcpb/manifest.json package-lock.json",
     "verify:versions": "node scripts/verify-version-sync.mjs",
     "prepublishOnly": "npm run verify:versions && npm run build"

@@ -66,7 +66,8 @@ const interactionInputSchema = {
   monthBranch: branchSchema.describe('Natal month branch.'),
   dayBranch: branchSchema.describe('Natal day branch.'),
   hourBranch: branchSchema.optional().describe('Natal hour branch. Omit when birth time is unknown.'),
-  annualBranch: branchSchema.optional().describe('Optional annual or target branch for dynamic interaction detection.'),
+  annualBranch: branchSchema.optional().describe('Optional annual or target branch. Preserved as the annual pillar role, independently of repeated natal branches.'),
+  dayunBranch: branchSchema.optional().describe('Optional Da Yun branch. Preserved as the dayun pillar role, independently of the annual and natal branches.'),
 };
 
 const trueSolarInputSchema = {
@@ -247,7 +248,7 @@ export function createServer(): McpServer {
     {
       title: 'Detect Bazi Interactions',
       description:
-        'Detect deterministic Earthly Branch interactions for natal charts, synastry checks, annual triggers, or target-branch comparison. Covers clashes, combinations, trines, directionals, punishments, destructions, and harms.',
+        'Detect raw Earthly Branch relationship occurrences for a natal chart and optional annual and Da Yun branches. Preserves every matching pillar position, including repeated branches. Covers clashes, six-combinations, the eight central-branch half-trines (COMBINATION_HALF), full trines, directionals, punishments, destructions, and harms. Results establish relationship presence, not weights, cancellation, or automatic transformation; targetElement is an affinity, not transformed energy.',
       inputSchema: interactionInputSchema,
       annotations: {
         readOnlyHint: true,
@@ -257,21 +258,14 @@ export function createServer(): McpServer {
       },
     },
     async (input) => {
-      const data = input as {
-        yearBranch: string;
-        monthBranch: string;
-        dayBranch: string;
-        hourBranch?: string;
-        annualBranch?: string;
-      };
       const interactions = detectInteractions(
         {
-          year: data.yearBranch,
-          month: data.monthBranch,
-          day: data.dayBranch,
-          hour: data.hourBranch ?? '',
+          year: input.yearBranch,
+          month: input.monthBranch,
+          day: input.dayBranch,
+          hour: input.hourBranch,
         },
-        data.annualBranch,
+        { annualBranch: input.annualBranch, dayunBranch: input.dayunBranch },
       );
       const output = createSuccessPayload({ interactions });
 
@@ -424,6 +418,7 @@ export function createServer(): McpServer {
           locationGuidance: 'For professional accuracy, pass longitude plus timezone or timezoneId. Do not rely on city-name guessing.',
           dstGuidance: 'If birth certificate time includes daylight saving time, pass dstOffset so the physical solar time is corrected.',
           reverseLookupGuidance: 'Use reverse_bazi_to_solar_times only as a candidate finder, then recalculate with location data.',
+          interactionGuidance: 'Branch interactions are raw relationship occurrences identified by pillar roles. Preserve duplicate branch positions and distinct annual/dayun roles. COMBINATION_HALF requires a central branch (子午卯酉); a full trine does not erase its half-trine occurrences. targetElement is a relationship affinity; legacy resultElement on TRINE/DIRECTIONAL has the same affinity-only meaning. NOT_EVALUATED means transformation was not assessed, not that it formed or failed. Do not treat occurrences as additive weights or automatically cancel clashes.',
         },
         resources: OPENFATE_LINKS,
       });
