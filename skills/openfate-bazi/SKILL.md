@@ -60,7 +60,17 @@ Treat its enriched pillar details, exact Da Yun timing, normalized calendar data
 
 Use `calculate_true_solar_time` when the user asks why clock time and OpenFate's calculated hour pillar differ.
 
-Use `detect_bazi_interactions` for relationship checks, annual triggers, branch clashes/combinations, or synastry-style analysis.
+Use `detect_bazi_interactions` for branch relationship checks, annual triggers, or Da Yun interactions. Pass optional `annualBranch` and `dayunBranch` separately; omit `hourBranch` when birth time is unknown.
+
+Preserve each occurrence's `id` and aligned `branches` / `pillars`. Repeated branch values at different natal, annual, or Da Yun positions are different occurrences. Do not collapse them by branch names alone.
+
+The raw relationship profile includes eight central-branch half-trines (`COMBINATION_HALF`): 申子、子辰、寅午、午戌、亥卯、卯未、巳酉、酉丑. Each requires 子午卯酉; endpoint-only pairs such as 申辰 do not qualify. Half-trines may coexist with a full trine in raw output.
+
+Raw presence is not settlement or interpretation. `targetElement` is an affinity, not added or transformed energy. `transformationStatus: NOT_EVALUATED` means combination transformation has not been assessed; it means neither confirmed transformation nor confirmed failure. `NOT_APPLICABLE` applies to non-transformation relationship types. Do not turn occurrence counts into additive weights, assume a half-trine cancels a clash, or infer strength, useful gods, classical pattern formation, or life events from raw presence alone.
+
+Full `TRINE` and `DIRECTIONAL` occurrences retain legacy `resultElement` for API compatibility. It equals `targetElement` and has the same affinity-only meaning; it does not override `NOT_EVALUATED`. Six-combinations and half-trines do not emit `resultElement`.
+
+Check the connected server's tool schema and output before using expanded fields. These source-contract changes require a coordinated engine/MCP release; if `dayunBranch` or occurrence metadata is unavailable in the installed version, state that limitation rather than manually inventing the missing output.
 
 Use `reverse_bazi_to_solar_times` only as a candidate search. Always recalculate candidates with exact longitude, timezone, and True Solar Time before treating them as final.
 

@@ -147,17 +147,28 @@ Best practice: pass `longitude` plus `timezone` or `timezoneId` for professional
 
 ### `detect_bazi_interactions`
 
-Detects Earthly Branch interactions for a natal chart, annual trigger, or simple synastry target.
+Detects raw Earthly Branch relationship occurrences for a natal chart, with optional annual and Da Yun branches.
+
+Inputs are `yearBranch`, `monthBranch`, `dayBranch`, optional `hourBranch`, optional `annualBranch`, and optional `dayunBranch`. Omit `hourBranch` when birth time is unknown; it is not replaced with an assumed branch. Existing annual-only calls remain supported.
 
 Supported interaction types:
 
 - clash
 - six-combination
+- central-branch half-trine (`COMBINATION_HALF`)
 - trine
 - directional
 - punishment
 - destruction
 - harm
+
+Every matching pillar occurrence is preserved. For example, `{ yearBranch: '申', monthBranch: '寅', dayBranch: '申', hourBranch: '申' }` returns three distinct 寅申 clashes, not one. Annual and Da Yun branches keep separate `annual` and `dayun` roles even when their branch values match natal positions.
+
+The half-trine profile covers 申子、子辰、寅午、午戌、亥卯、卯未、巳酉、酉丑: each pair includes a central branch (子午卯酉). Endpoint-only pairs such as 申辰 are not this half-trine type. Half-trines remain in raw output when the full three-branch trine is also present.
+
+Each occurrence has a stable `id` and aligned `branches` / `pillars` arrays. `targetElement` means relationship affinity, not transformed energy. Combination `transformationStatus` is `NOT_EVALUATED`: branch-only presence does not establish transformation or its failure. Other relationship types use `NOT_APPLICABLE`. These results are not scored weights and do not automatically cancel clashes; settlement and interpretation belong to a separate analysis layer.
+
+For API compatibility, full `TRINE` and `DIRECTIONAL` occurrences also retain legacy `resultElement`, equal to `targetElement` and carrying the same affinity-only meaning. Six-combinations and half-trines do not emit `resultElement`.
 
 ### `calculate_true_solar_time`
 
@@ -185,6 +196,7 @@ Returns OpenFate calculation policy:
 - Default day-boundary mode is `ZI_HOUR_23`.
 - DST should be passed as `dstOffset` when birth certificate time includes daylight saving.
 - Reverse lookup should be treated as a candidate search.
+- Branch interactions preserve raw pillar occurrences, not weighted or automatically transformed outcomes.
 
 ### `get_openfate_bazi_resources`
 
@@ -222,6 +234,16 @@ npm run smoke
 ```
 
 The smoke test spawns the built stdio server and drives it through the real MCP SDK client.
+
+To test source changes without building `dist`, run `npm run smoke:source`. This requires the sibling `../bazi-engine` source checkout with its dependencies installed, as well as this package's dependencies. The test-only `tests/tsconfig.source.json` maps `@openfate/bazi-engine` to that sibling's `src/index.ts`; the smoke runner passes this configuration to the SDK-spawned server and asserts the resolved source path before testing. It does not rely on a patched installed engine and remains reproducible after `npm ci --ignore-scripts` in this package.
+
+Both smoke modes exercise the same MCP transport and interaction regression fixtures, including repeated branches, eight half-trines, unknown hour, and annual/Da Yun roles. The ordinary `smoke` command still tests built MCP output against its installed published engine dependency. `npx tsc --noEmit -p tests/tsconfig.source.json` checks the coordinated source contract without emitting build files.
+
+### Pending interaction release
+
+The raw-occurrence and `dayunBranch` changes in this source checkout are pending a coordinated release; they are not a claim about the currently published npm version. First publish an engine version containing the expanded interaction contract, then update this package's dependency range and lockfile to that verified published version, verify both smoke modes, and release the MCP. Do not ship this source against an older engine or replace the published dependency with a `file:` dependency.
+
+Until that dependency update, ordinary `npx tsc --noEmit` and the built `npm run smoke` gate are not expected to pass against the older installed engine. Use the source-only gates above to review the coordinated changes; their success is not release verification.
 
 ## Privacy
 
@@ -389,17 +411,28 @@ skills/openfate-bazi/SKILL.md
 
 ### `detect_bazi_interactions`
 
-偵測地支互動，適合用於本命盤、流年觸發，或簡單合盤比較。
+偵測本命盤及選填流年、大運地支的原始關係。
+
+輸入欄位為 `yearBranch`、`monthBranch`、`dayBranch`，以及選填的 `hourBranch`、`annualBranch`、`dayunBranch`。出生時辰未知時省略 `hourBranch`，不會補入假設時柱。原有只傳流年的呼叫方式仍可使用。
 
 支援類型：
 
 - 沖
 - 六合
+- 含旺支的半合（`COMBINATION_HALF`）
 - 三合
 - 三會
 - 刑
 - 破
 - 害
+
+同一地支出現在不同柱位時，每個關係都會保留。例如申、寅、申、申會回傳三組不同柱位的寅申沖。流年與大運分別使用 `annual`、`dayun` 角色，即使地支相同，也不會與本命柱位合併。
+
+半合口徑涵蓋申子、子辰、寅午、午戌、亥卯、卯未、巳酉、酉丑八組，每組都含子午卯酉其中一個旺支。申辰等兩端支不屬於此半合類型。三合齊全時，原始資料仍保留其中的半合關係。
+
+每個關係包含穩定的 `id`，以及逐項對應的 `branches`、`pillars`。`targetElement` 只表示關係指向的五行，不代表已經合化。合類的 `transformationStatus` 為 `NOT_EVALUATED`，表示尚未評估合化，並非已成化或已判定不能化；其他關係使用 `NOT_APPLICABLE`。這些資料不是可直接累加的評分，也不會自動解沖；成立程度與解讀須由獨立分析層處理。
+
+為相容既有 API，完整 `TRINE`、`DIRECTIONAL` 關係仍保留舊欄位 `resultElement`，值與 `targetElement` 相同，也僅表示五行指向。六合與半合不回傳 `resultElement`。
 
 ### `calculate_true_solar_time`
 
@@ -427,6 +460,7 @@ skills/openfate-bazi/SKILL.md
 - 預設換日規則是 `ZI_HOUR_23`。
 - 如果出生證明時間包含夏令時間，應傳入 `dstOffset`。
 - 八字反查只能當候選搜尋，不能取代精準排盤。
+- 地支互動保留原始柱位關係，不代表加權分數或自動合化結果。
 
 ### `get_openfate_bazi_resources`
 
@@ -464,6 +498,16 @@ npm run smoke
 ```
 
 `smoke` 測試會啟動編譯後的 stdio server，並透過真正的 MCP SDK client 呼叫工具。
+
+不編譯 `dist` 時可執行 `npm run smoke:source` 驗證原始碼。須具備相鄰的 `../bazi-engine` 原始碼工作目錄，且引擎與本套件都已安裝依賴。測試專用的 `tests/tsconfig.source.json` 將 `@openfate/bazi-engine` 指向該引擎的 `src/index.ts`；測試執行器會把設定傳給 MCP SDK 啟動的伺服器，並先驗證實際解析的原始碼路徑。這個模式不依賴修改過的已安裝引擎，在本套件重新執行 `npm ci --ignore-scripts` 後仍可重現。
+
+兩種 smoke 模式使用相同 MCP 傳輸與回歸案例，涵蓋重複地支、八組半合、未知時辰，以及流年／大運角色。一般 `smoke` 仍驗證編譯後 MCP 與已安裝的 npm 公開引擎。`npx tsc --noEmit -p tests/tsconfig.source.json` 可檢查協調中的原始碼契約，不產生編譯檔案。
+
+### 待發布的地支互動更新
+
+本原始碼中的完整柱位關係與 `dayunBranch` 更新仍待協調發布，不代表目前 npm 公開版本已具備這些行為。須先發布包含擴充互動契約的引擎版本，再將本套件的依賴範圍與鎖定檔更新為已確認發布的版本，驗證兩種 smoke 模式後才發布 MCP。不可搭配舊引擎發布本原始碼，也不可改用 `file:` 依賴。
+
+依賴更新前，一般 `npx tsc --noEmit` 與編譯後的 `npm run smoke` 預期無法通過舊版已安裝引擎的契約。此時應使用上述原始碼專用檢查審核協調中的變更；通過原始碼檢查不代表已完成發布驗證。
 
 ## 隱私
 
