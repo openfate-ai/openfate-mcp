@@ -17,6 +17,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Wait for npm registry propagation
+        run: |
+          package_version="$(node -p "require('./package.json').version")"
+          for attempt in {1..12}; do
+            if npm view "@openfate/bazi-mcp@${package_version}" version >/dev/null 2>&1; then
+              exit 0
+            fi
+            echo "Waiting for @openfate/bazi-mcp@${package_version} to become visible (attempt ${attempt}/12)..."
+            sleep 10
+          done
+          echo "::error::@openfate/bazi-mcp@${package_version} did not become visible within 120 seconds."
+          exit 1
+
       - name: Install MCP publisher
         run: |
           curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" |
