@@ -21,6 +21,7 @@ import { createRequire } from 'node:module';
 // server version can't drift from the published npm version again.
 const { version: SERVER_VERSION } = createRequire(import.meta.url)('../package.json') as { version: string };
 const DEFAULT_DAY_BOUNDARY_MODE: DayBoundaryMode = 'ZI_HOUR_23';
+const DEFAULT_DAYUN_TIMING_VERSION = 'DAYUN_SECOND_V2' as const;
 const DEFAULT_REVERSE_START_YEAR = 1900;
 const DEFAULT_REVERSE_LIMIT = 20;
 
@@ -50,6 +51,7 @@ const baziInputSchema = {
   day: z.number().int().min(1).max(31).describe('Birth day, 1-31.'),
   hour: z.number().int().min(0).max(23).optional().describe('Birth hour in local civil time, 0-23. Omit when birth time is unknown.'),
   minute: z.number().int().min(0).max(59).default(0).describe('Birth minute in local civil time.'),
+  second: z.number().int().min(0).max(59).default(0).describe('Birth second in local civil time.'),
   gender: z.enum(['male', 'female']).describe('Birth gender used for Da Yun direction.'),
   longitude: z.number().min(-180).max(180).optional().describe('Birthplace longitude in decimal degrees. Enables true solar time correction.'),
   timezone: z.number().min(-14).max(14).optional().describe('UTC offset in hours for the birth clock time, such as 8 for China or -5 for US Eastern Standard Time.'),
@@ -99,6 +101,11 @@ interface ReverseMatch {
     hour: string;
   };
 }
+
+type McpBaziInput = BaziInput & {
+  second?: number;
+  daYunTimingVersion: typeof DEFAULT_DAYUN_TIMING_VERSION;
+};
 
 function asJsonText(value: unknown): string {
   return JSON.stringify(value, null, 2);
@@ -191,7 +198,7 @@ export function createServer(): McpServer {
     },
     {
       instructions:
-        'Use these tools for deterministic Bazi/Four Pillars calculations. Do not manually calculate pillars with the language model. Ask for longitude and timezone data when precise true solar time matters.',
+        'Use these tools for deterministic Bazi/Four Pillars calculations. Do not manually calculate pillars or Da Yun onset with the language model. Ask for longitude and timezone data when precise true solar time or DAYUN_SECOND_V2 timing matters, and check the Da Yun timing receipt before presenting an exact onset.',
     },
   );
 
@@ -200,7 +207,7 @@ export function createServer(): McpServer {
     {
       title: 'Calculate Bazi Chart',
       description:
-        'Calculate a deterministic OpenFate Bazi/Four Pillars chart with True Solar Time correction, Day Master, Da Yun cycles, and branch interactions. For best accuracy, pass longitude plus timezone or timezoneId.',
+        'Calculate a deterministic OpenFate Bazi/Four Pillars chart with True Solar Time correction, Day Master, DAYUN_SECOND_V2 onset receipts, Da Yun cycles, and branch interactions. Pass an exact birth time plus timezone or timezoneId for a calculated V2 onset; otherwise inspect the explicit unavailable/fallback receipt.',
       inputSchema: baziInputSchema,
       annotations: {
         readOnlyHint: true,
@@ -210,10 +217,17 @@ export function createServer(): McpServer {
       },
     },
     async (input) => {
-      const baziInput: BaziInput = {
+      const baziInput: McpBaziInput = {
         ...(input as BaziInput),
         dayBoundaryMode: (input as BaziInput).dayBoundaryMode ?? DEFAULT_DAY_BOUNDARY_MODE,
+        daYunTimingVersion: DEFAULT_DAYUN_TIMING_VERSION,
       };
+      // Zod supplies clock defaults before the handler runs. Unknown birth time must
+      // remain unknown instead of becoming an invalid minute/second-only payload.
+      if (baziInput.hour === undefined) {
+        delete baziInput.minute;
+        delete baziInput.second;
+      }
       if ((baziInput.enableTrueSolarTime ?? true) && baziInput.longitude !== undefined && !hasTimeZoneBasis(baziInput)) {
         return {
           isError: true,
@@ -232,6 +246,7 @@ export function createServer(): McpServer {
         policy: {
           enableTrueSolarTime: baziInput.enableTrueSolarTime ?? true,
           dayBoundaryMode: baziInput.dayBoundaryMode ?? DEFAULT_DAY_BOUNDARY_MODE,
+          daYunTimingVersion: DEFAULT_DAYUN_TIMING_VERSION,
           timezoneBasis: baziInput.timezoneId ?? baziInput.timezone ?? null,
         },
       });
@@ -414,6 +429,8 @@ export function createServer(): McpServer {
         policy: {
           defaultTrueSolarTime: true,
           defaultDayBoundaryMode: DEFAULT_DAY_BOUNDARY_MODE,
+          daYunTimingVersion: DEFAULT_DAYUN_TIMING_VERSION,
+          daYunTimingGuidance: 'Present an exact onset only when chart.daYun.timing.status is CALCULATED and version is DAYUN_SECOND_V2. UNAVAILABLE retains legacy scalar fields only as an explicitly labeled fallback.',
           dayBoundaryMeaning: 'ZI_HOUR_23 means 23:00-23:59 is calculated with the next day pillar.',
           locationGuidance: 'For professional accuracy, pass longitude plus timezone or timezoneId. Do not rely on city-name guessing.',
           dstGuidance: 'If birth certificate time includes daylight saving time, pass dstOffset so the physical solar time is corrected.',

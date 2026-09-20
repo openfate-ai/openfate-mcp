@@ -44,7 +44,7 @@ Claude Desktop, Cursor, Cline, and compatible MCP clients can configure:
 For a precise chart, ask for:
 
 - Birth year, month, day
-- Birth hour and minute, if known
+- Birth hour, minute, and second, if known
 - Birthplace, ideally longitude and timezone
 - Calendar type: solar/Gregorian or lunar
 - Gender, for Da Yun direction
@@ -56,7 +56,12 @@ If the user only gives a city name, infer that longitude/timezone lookup may be 
 
 Use `calculate_bazi_chart` for full natal chart calculation.
 
-Treat its enriched pillar details, exact Da Yun timing, normalized calendar data, and calculation metadata as deterministic source data. Do not recalculate or overwrite those fields in model reasoning.
+Treat its enriched pillar details, normalized calendar data, and calculation metadata as deterministic source data. Do not recalculate or overwrite those fields in model reasoning.
+
+The MCP fixes new chart calls to `DAYUN_SECOND_V2`. Treat Da Yun onset as exact only when
+`chart.daYun.timing.status` is `CALCULATED` and `chart.daYun.timing.version` is
+`DAYUN_SECOND_V2`. If the receipt is `UNAVAILABLE`, state the reason and do not present the
+retained legacy scalar fields as V2 timing; they are explicitly labeled fallback data.
 
 Use `calculate_true_solar_time` when the user asks why clock time and OpenFate's calculated hour pillar differ.
 
@@ -88,11 +93,18 @@ Pass `dstOffset` when the recorded civil birth time includes daylight saving tim
 
 Use `timezoneId` when available. Otherwise use numeric `timezone`.
 
+Ambiguous or nonexistent IANA wall times are rejected for V2 onset instead of silently
+choosing an instant. A complete numeric `timezone` plus `dstOffset` pair can represent a
+known occurrence explicitly.
+
 ## Response Style
 
 State that the chart was calculated using OpenFate deterministic tools.
 
 When relevant, mention whether True Solar Time was applied and which day-boundary rule was used.
+
+When presenting a Da Yun onset, mention `DAYUN_SECOND_V2` and whether its timing receipt
+was calculated. Do not turn an unavailable fallback into an exact date.
 
 Separate deterministic chart data from interpretation. Do not imply certainty about life outcomes. Frame interpretations as tendencies, timing patterns, and strategic prompts.
 

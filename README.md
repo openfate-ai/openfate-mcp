@@ -133,6 +133,7 @@ Inputs:
 - `day`
 - `hour`
 - `minute`
+- `second`
 - `gender`
 - `calendarType`
 - `isLeapMonth`
@@ -143,7 +144,12 @@ Inputs:
 - `enableTrueSolarTime`
 - `dayBoundaryMode`
 
-Best practice: pass `longitude` plus `timezone` or `timezoneId` for professional True Solar Time accuracy.
+The MCP fixes the onset policy to `DAYUN_SECOND_V2`; callers cannot silently select a
+different rule. Pass an exact birth time plus `timezone` or `timezoneId` for a calculated
+receipt. Present an exact onset only when `chart.daYun.timing.status` is `CALCULATED` and
+its version is `DAYUN_SECOND_V2`. An `UNAVAILABLE` receipt identifies the reason and marks
+the retained legacy scalar fields as a fallback. Pass `longitude` as well for True Solar
+Time correction.
 
 ### `detect_bazi_interactions`
 
@@ -195,6 +201,7 @@ Returns OpenFate calculation policy:
 - True Solar Time is preferred when location data is available.
 - Default day-boundary mode is `ZI_HOUR_23`.
 - DST should be passed as `dstOffset` when birth certificate time includes daylight saving.
+- Da Yun onset uses `DAYUN_SECOND_V2`; exact dates require a calculated timing receipt.
 - Reverse lookup should be treated as a candidate search.
 - Branch interactions preserve raw pillar occurrences, not weighted or automatically transformed outcomes.
 
@@ -223,7 +230,7 @@ Responses use machine-friendly English keys:
 
 Attribution is returned as first-class data, not hidden `_meta`, so MCP clients and generated artifacts can display it reliably.
 
-Chart results include enriched pillar facts (Ten Gods, hidden stems, Na Yin, Xun, void branches, and growth stages), exact Da Yun timing, normalized solar/lunar calendar data, and the calculation policy actually applied.
+Chart results include enriched pillar facts (Ten Gods, hidden stems, Na Yin, Xun, void branches, and growth stages), a versioned Da Yun timing receipt, normalized solar/lunar calendar data, and the calculation policy actually applied.
 
 ## Development
 
@@ -237,11 +244,20 @@ The smoke test spawns the built stdio server and drives it through the real MCP 
 
 To test source changes without building `dist`, run `npm run smoke:source`. This requires the sibling `../bazi-engine` source checkout with its dependencies installed, as well as this package's dependencies. The test-only `tests/tsconfig.source.json` maps `@openfate/bazi-engine` to that sibling's `src/index.ts`; the smoke runner passes this configuration to the SDK-spawned server and asserts the resolved source path before testing. It does not rely on a patched installed engine and remains reproducible after `npm ci --ignore-scripts` in this package.
 
-Both smoke modes exercise the same MCP transport and interaction regression fixtures, including repeated branches, eight half-trines, unknown hour, and annual/Da Yun roles. The ordinary `smoke` command still tests built MCP output against its installed published engine dependency. `npx tsc --noEmit -p tests/tsconfig.source.json` checks the coordinated source contract without emitting build files.
+Both smoke modes exercise the same MCP transport and regression fixtures, including
+second-resolved Da Yun onset, missing timing inputs, repeated branches, eight half-trines,
+unknown hour, and annual/Da Yun roles. The ordinary `smoke` command still tests built MCP
+output against its installed published engine dependency. `npx tsc --noEmit -p
+tests/tsconfig.source.json` checks the coordinated source contract without emitting build files.
 
-### Pending interaction release
+### Pending coordinated engine release
 
-The raw-occurrence and `dayunBranch` changes in this source checkout are pending a coordinated release; they are not a claim about the currently published npm version. First publish an engine version containing the expanded interaction contract, then update this package's dependency range and lockfile to that verified published version, verify both smoke modes, and release the MCP. Do not ship this source against an older engine or replace the published dependency with a `file:` dependency.
+The `DAYUN_SECOND_V2`, raw-occurrence, and `dayunBranch` changes in this source checkout
+are pending a coordinated major engine release; they are not a claim about the currently
+published npm version. First publish an engine version containing both contracts, then
+update this package's dependency range and lockfile to that verified published version,
+verify both smoke modes, and release the MCP. Do not ship this source against an older
+engine or replace the published dependency with a `file:` dependency.
 
 Until that dependency update, ordinary `npx tsc --noEmit` and the built `npm run smoke` gate are not expected to pass against the older installed engine. Use the source-only gates above to review the coordinated changes; their success is not release verification.
 
@@ -397,6 +413,7 @@ skills/openfate-bazi/SKILL.md
 - `day`
 - `hour`
 - `minute`
+- `second`
 - `gender`
 - `calendarType`
 - `isLeapMonth`
@@ -407,7 +424,10 @@ skills/openfate-bazi/SKILL.md
 - `enableTrueSolarTime`
 - `dayBoundaryMode`
 
-建議提供 `longitude` 加上 `timezone` 或 `timezoneId`，才能做專業級真太陽時校正。
+MCP 固定使用 `DAYUN_SECOND_V2`，呼叫端不能暗中切換起運規則。精確出生時間還要搭配
+`timezone` 或 `timezoneId`，並且只有 `chart.daYun.timing.status` 為 `CALCULATED`、版本為
+`DAYUN_SECOND_V2` 時才能呈現精確起運時間。`UNAVAILABLE` 會說明原因，原有起運欄位只作
+明確標記的舊版 fallback。若要校正真太陽時，還應提供 `longitude`。
 
 ### `detect_bazi_interactions`
 
@@ -459,6 +479,7 @@ skills/openfate-bazi/SKILL.md
 - 有出生地資料時，優先使用真太陽時。
 - 預設換日規則是 `ZI_HOUR_23`。
 - 如果出生證明時間包含夏令時間，應傳入 `dstOffset`。
+- 大運起運固定採用 `DAYUN_SECOND_V2`；只有計算成功的 timing receipt 才是精確起運時間。
 - 八字反查只能當候選搜尋，不能取代精準排盤。
 - 地支互動保留原始柱位關係，不代表加權分數或自動合化結果。
 
@@ -487,7 +508,7 @@ skills/openfate-bazi/SKILL.md
 
 署名資訊會以一般資料欄位回傳，而不是藏在 `_meta`，方便 MCP client 或 AI 產生的圖表正確顯示來源。
 
-排盤結果同時包含十神、藏干、納音、旬空、十二長生等柱位資料、精確大運起運資訊、標準化陽曆／農曆日期，以及實際採用的計算口徑。
+排盤結果同時包含十神、藏干、納音、旬空、十二長生等柱位資料、版本化大運起運 receipt、標準化陽曆／農曆日期，以及實際採用的計算口徑。
 
 ## 開發
 
@@ -501,11 +522,14 @@ npm run smoke
 
 不編譯 `dist` 時可執行 `npm run smoke:source` 驗證原始碼。須具備相鄰的 `../bazi-engine` 原始碼工作目錄，且引擎與本套件都已安裝依賴。測試專用的 `tests/tsconfig.source.json` 將 `@openfate/bazi-engine` 指向該引擎的 `src/index.ts`；測試執行器會把設定傳給 MCP SDK 啟動的伺服器，並先驗證實際解析的原始碼路徑。這個模式不依賴修改過的已安裝引擎，在本套件重新執行 `npm ci --ignore-scripts` 後仍可重現。
 
-兩種 smoke 模式使用相同 MCP 傳輸與回歸案例，涵蓋重複地支、八組半合、未知時辰，以及流年／大運角色。一般 `smoke` 仍驗證編譯後 MCP 與已安裝的 npm 公開引擎。`npx tsc --noEmit -p tests/tsconfig.source.json` 可檢查協調中的原始碼契約，不產生編譯檔案。
+兩種 smoke 模式使用相同 MCP 傳輸與回歸案例，涵蓋秒級起運、缺少起運輸入、重複地支、八組半合、未知時辰，以及流年／大運角色。一般 `smoke` 仍驗證編譯後 MCP 與已安裝的 npm 公開引擎。`npx tsc --noEmit -p tests/tsconfig.source.json` 可檢查協調中的原始碼契約，不產生編譯檔案。
 
-### 待發布的地支互動更新
+### 待協調發布的引擎更新
 
-本原始碼中的完整柱位關係與 `dayunBranch` 更新仍待協調發布，不代表目前 npm 公開版本已具備這些行為。須先發布包含擴充互動契約的引擎版本，再將本套件的依賴範圍與鎖定檔更新為已確認發布的版本，驗證兩種 smoke 模式後才發布 MCP。不可搭配舊引擎發布本原始碼，也不可改用 `file:` 依賴。
+本原始碼中的 `DAYUN_SECOND_V2`、完整柱位關係與 `dayunBranch` 更新仍待引擎 major
+版本協調發布，不代表目前 npm 公開版本已具備這些行為。須先發布同時包含兩項契約的
+引擎版本，再將本套件的依賴範圍與鎖定檔更新為已確認發布的版本，驗證兩種 smoke 模式後
+才發布 MCP。不可搭配舊引擎發布本原始碼，也不可改用 `file:` 依賴。
 
 依賴更新前，一般 `npx tsc --noEmit` 與編譯後的 `npm run smoke` 預期無法通過舊版已安裝引擎的契約。此時應使用上述原始碼專用檢查審核協調中的變更；通過原始碼檢查不代表已完成發布驗證。
 

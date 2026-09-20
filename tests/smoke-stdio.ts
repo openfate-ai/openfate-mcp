@@ -10,7 +10,7 @@ import type { BranchInteraction } from '@openfate/bazi-engine';
 
 /* Node */
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -176,7 +176,11 @@ async function main(): Promise<void> {
       "process.stdout.write(import.meta.resolve('@openfate/bazi-engine'))",
     ], { env: serverEnvironment, cwd: resolve(__dirname, '..'), encoding: 'utf8' });
     assert.equal(resolution.status, 0, resolution.stderr);
-    assert.equal(resolution.stdout, pathToFileURL(ENGINE_SOURCE_ENTRY).href, 'source smoke must not silently exercise an installed engine');
+    assert.equal(
+      resolution.stdout,
+      pathToFileURL(realpathSync(ENGINE_SOURCE_ENTRY)).href,
+      'source smoke must not silently exercise an installed engine',
+    );
   }
   const transport = new StdioClientTransport({
     command: process.execPath,
@@ -199,6 +203,8 @@ async function main(): Promise<void> {
     assert.ok(toolNames.includes('calculate_true_solar_time'));
     assert.ok(toolNames.includes('reverse_bazi_to_solar_times'));
     assert.ok(toolNames.includes('get_openfate_bazi_policy'));
+    const chartTool = tools.tools.find((tool) => tool.name === 'calculate_bazi_chart');
+    assert.ok(chartTool?.inputSchema.properties?.second, 'clients can pass second-resolved birth time');
     const interactionTool = tools.tools.find((tool) => tool.name === 'detect_bazi_interactions');
     assert.ok(interactionTool);
     assert.ok(interactionTool.inputSchema.properties?.dayunBranch, 'clients can discover the Da Yun input');
@@ -228,8 +234,55 @@ async function main(): Promise<void> {
     assert.deepEqual(chartPayload.data.chart.pillars.year.voidBranches, ['申', '酉']);
     assert.equal(chartPayload.data.chart.daYun.startYear, 2000);
     assert.equal(chartPayload.data.chart.daYun.startAge, 2);
+    assert.equal(chartPayload.data.chart.daYun.startDate, '2000-11-23 08:00:00');
+    assert.equal(chartPayload.data.chart.daYun.timing.status, 'CALCULATED');
+    assert.equal(chartPayload.data.chart.daYun.timing.version, 'DAYUN_SECOND_V2');
+    assert.equal(chartPayload.data.chart.metadata.daYunTimingVersion, 'DAYUN_SECOND_V2');
+    assert.equal(chartPayload.data.policy.daYunTimingVersion, 'DAYUN_SECOND_V2');
     assert.equal(chartPayload.data.chart.calendar.zodiac, '虎');
     assert.equal(chartPayload.data.chart.metadata.trueSolarTimeApplied, true);
+
+    const kaipingResult = await client.callTool({
+      name: 'calculate_bazi_chart',
+      arguments: {
+        year: 2001,
+        month: 7,
+        day: 2,
+        hour: 3,
+        minute: 14,
+        second: 0,
+        gender: 'male',
+        longitude: 112.6986,
+        timezoneId: 'Asia/Shanghai',
+        dayBoundaryMode: 'ZI_HOUR_23',
+      },
+    }) as ToolCallResult;
+    const kaipingPayload = JSON.parse(kaipingResult.content[0].text);
+    assert.equal(kaipingPayload.data.chart.daYun.startDate, '2010-03-23 19:14:00');
+    assert.deepEqual(kaipingPayload.data.chart.daYun.startOffset,
+      { years: 8, months: 8, days: 21, hours: 16 });
+    assert.equal(kaipingPayload.data.chart.daYun.timing.birthUtc, '2001-07-01T19:14:00Z');
+    assert.equal(kaipingPayload.data.chart.daYun.timing.jieUtc, '2001-06-05T14:53:35Z');
+    assert.equal(kaipingPayload.data.chart.daYun.timing.intervalSeconds, 2262025);
+
+    const unknownTimeResult = await client.callTool({
+      name: 'calculate_bazi_chart',
+      arguments: { year: 2001, month: 7, day: 2, gender: 'male' },
+    }) as ToolCallResult;
+    assert.notEqual(unknownTimeResult.isError, true);
+    const unknownTimePayload = JSON.parse(unknownTimeResult.content[0].text);
+    assert.equal(unknownTimePayload.data.chart.pillars.hour, null);
+    assert.equal(unknownTimePayload.data.chart.daYun.timing.status, 'UNAVAILABLE');
+    assert.equal(unknownTimePayload.data.chart.daYun.timing.reason, 'UNKNOWN_BIRTH_TIME');
+
+    const missingTimezoneResult = await client.callTool({
+      name: 'calculate_bazi_chart',
+      arguments: { year: 2001, month: 7, day: 2, hour: 3, minute: 14, gender: 'male' },
+    }) as ToolCallResult;
+    assert.notEqual(missingTimezoneResult.isError, true);
+    const missingTimezonePayload = JSON.parse(missingTimezoneResult.content[0].text);
+    assert.equal(missingTimezonePayload.data.chart.daYun.timing.status, 'UNAVAILABLE');
+    assert.equal(missingTimezonePayload.data.chart.daYun.timing.reason, 'MISSING_TIMEZONE');
 
     // DST civil correction must survive the server boundary (the ...input passthrough) with
     // True Solar Time disabled — 1988-07-15 15:20 DST=1 is physically 14:20 standard, so the
@@ -267,6 +320,14 @@ async function main(): Promise<void> {
     assert.ok(interactionPayload.data.interactions.length > 0);
 
     await checkInteractionContract(client);
+
+    const policyResult = await client.callTool({
+      name: 'get_openfate_bazi_policy',
+      arguments: {},
+    }) as ToolCallResult;
+    const policyPayload = JSON.parse(policyResult.content[0].text);
+    assert.equal(policyPayload.data.policy.daYunTimingVersion, 'DAYUN_SECOND_V2');
+    assert.match(policyPayload.data.policy.daYunTimingGuidance, /timing\.status/);
   } finally {
     // Await subprocess shutdown on assertion failures as well as successful runs.
     try {
