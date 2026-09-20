@@ -4,15 +4,15 @@
   "title": "OpenFate Bazi MCP",
   "description": "OpenFate Bazi MCP with True Solar Time, Four Pillars, Da Yun, and branch interactions.",
   "repository": {
-    "url": "https://github.com/openfate-ai/bazi-mcp",
+    "url": "https://github.com/openfate-ai/openfate-mcp",
     "source": "github"
   },
-  "version": "0.3.0",
+  "version": "0.3.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@openfate/bazi-mcp",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "transport": {
         "type": "stdio"
       }

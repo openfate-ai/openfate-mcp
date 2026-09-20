@@ -18,7 +18,7 @@ const smitheryMetadata = {
   displayName: 'OpenFate Bazi MCP',
   description: 'Deterministic Bazi and Four Pillars charts with True Solar Time, Da Yun cycles, enriched pillars, and branch interactions.',
   homepage: 'https://openfate.ai/developers/bazi-mcp',
-  repositoryUrl: 'https://github.com/openfate-ai/bazi-mcp',
+  repositoryUrl: 'https://github.com/openfate-ai/openfate-mcp',
   backlinkUrl: 'https://openfate.ai',
   license: packageMetadata.license,
   unlisted: false,
