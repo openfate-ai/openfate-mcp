@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "openfate-bazi-mcp",
   "display_name": "OpenFate Bazi MCP",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "description": "Deterministic Bazi charts with True Solar Time, Da Yun, and branch interactions.",
   "long_description": "OpenFate Bazi MCP gives AI agents a deterministic Four Pillars calculation layer instead of asking a language model to guess calendrical math. It supports solar and lunar dates, True Solar Time, Zi-hour boundary policies, enriched pillars, Da Yun cycles, branch interactions, and reverse Bazi lookup. All calculations run locally and no birth data is sent to OpenFate.",
   "author": {

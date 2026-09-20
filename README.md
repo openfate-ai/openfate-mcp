@@ -250,16 +250,12 @@ unknown hour, and annual/Da Yun roles. The ordinary `smoke` command still tests 
 output against its installed published engine dependency. `npx tsc --noEmit -p
 tests/tsconfig.source.json` checks the coordinated source contract without emitting build files.
 
-### Pending coordinated engine release
+### Engine compatibility
 
-The `DAYUN_SECOND_V2`, raw-occurrence, and `dayunBranch` changes in this source checkout
-are pending a coordinated major engine release; they are not a claim about the currently
-published npm version. First publish an engine version containing both contracts, then
-update this package's dependency range and lockfile to that verified published version,
-verify both smoke modes, and release the MCP. Do not ship this source against an older
-engine or replace the published dependency with a `file:` dependency.
-
-Until that dependency update, ordinary `npx tsc --noEmit` and the built `npm run smoke` gate are not expected to pass against the older installed engine. Use the source-only gates above to review the coordinated changes; their success is not release verification.
+Version 0.3 requires `@openfate/bazi-engine` version 2. Its `DAYUN_SECOND_V2`,
+raw-occurrence, and `dayunBranch` contracts are verified in both the built-package
+and coordinated-source smoke modes. The published dependency remains the release
+source of truth; this package does not use a local `file:` dependency.
 
 ## Privacy
 
@@ -524,14 +520,11 @@ npm run smoke
 
 兩種 smoke 模式使用相同 MCP 傳輸與回歸案例，涵蓋秒級起運、缺少起運輸入、重複地支、八組半合、未知時辰，以及流年／大運角色。一般 `smoke` 仍驗證編譯後 MCP 與已安裝的 npm 公開引擎。`npx tsc --noEmit -p tests/tsconfig.source.json` 可檢查協調中的原始碼契約，不產生編譯檔案。
 
-### 待協調發布的引擎更新
+### 引擎相容性
 
-本原始碼中的 `DAYUN_SECOND_V2`、完整柱位關係與 `dayunBranch` 更新仍待引擎 major
-版本協調發布，不代表目前 npm 公開版本已具備這些行為。須先發布同時包含兩項契約的
-引擎版本，再將本套件的依賴範圍與鎖定檔更新為已確認發布的版本，驗證兩種 smoke 模式後
-才發布 MCP。不可搭配舊引擎發布本原始碼，也不可改用 `file:` 依賴。
-
-依賴更新前，一般 `npx tsc --noEmit` 與編譯後的 `npm run smoke` 預期無法通過舊版已安裝引擎的契約。此時應使用上述原始碼專用檢查審核協調中的變更；通過原始碼檢查不代表已完成發布驗證。
+0.3 版需要 `@openfate/bazi-engine` 2.x。`DAYUN_SECOND_V2`、完整柱位關係與
+`dayunBranch` 契約皆由已編譯套件及協調原始碼兩種 smoke 模式驗證。正式發布的
+npm 依賴仍是版本來源；本套件不使用本機 `file:` 依賴。
 
 ## 隱私
 

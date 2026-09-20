@@ -1,6 +1,6 @@
 {
   "name": "@openfate/bazi-mcp",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "mcpName": "io.github.openfate-ai/bazi-mcp",
   "description": "OpenFate Bazi MCP server with deterministic Four Pillars calculation, True Solar Time, branch interactions, and reverse Bazi lookup.",
   "type": "module",
@@ -63,7 +63,7 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@openfate/bazi-engine": "^1.1.1",
+    "@openfate/bazi-engine": "^2.0.0",
     "@openfate/true-solar-time": "^4.0.2",
     "zod": "^3.25.76"
   },
