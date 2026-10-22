@@ -1,5 +1,7 @@
 # @openfate/bazi-mcp
 
+[![LightNow capabilities](https://lightnow.ai/badge/io.github.openfate-ai/bazi-mcp)](https://lightnow.ai/servers/io.github.openfate-ai/bazi-mcp)
+
 English | [繁體中文（台灣）](#繁體中文台灣)
 
 OpenFate Bazi MCP is a Model Context Protocol server for accurate Bazi / Four Pillars calculation inside AI agents such as Claude Desktop, Cursor, Cline, and Continue.
