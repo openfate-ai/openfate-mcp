@@ -4,7 +4,7 @@ English | [繁體中文（台灣）](#繁體中文台灣)
 
 OpenFate Bazi MCP is a Model Context Protocol server for accurate Bazi / Four Pillars calculation inside AI agents such as Claude Desktop, Cursor, Cline, and Continue.
 
-To interpret the returned fields, follow a worked chart from its classical source to the published reading. Seven Bazi lessons cover hidden stems, branch interactions and luck-cycle boundaries. [English field guide](https://github.com/openfate-ai/bazi-engine/blob/main/learn/en.md) · [Open reading corpus](https://github.com/openfate-ai/bazi-engine/releases/tag/corpus-v2.0.0)
+To interpret the returned fields, follow a worked chart from its classical source to the published reading. Seven Bazi lessons cover hidden stems, branch interactions and luck-cycle boundaries. [English field guide](https://github.com/openfate-ai/bazi-engine/blob/main/learn/en.md) · [Open reading corpus](https://github.com/openfate-ai/bazi-engine/releases/tag/corpus-v2.1.0)
 
 Powered by [OpenFate.ai](https://openfate.ai), an AI-native Bazi, Ziwei, and astrology platform. You can also try the free [Bazi Chart Calculator](https://openfate.ai/en/bazi-chart), generate an [AI Bazi Reading](https://openfate.ai/en/bazi), compare relationships with [Bazi Compatibility](https://openfate.ai/en/compatibility/bazi/marriage), or read the [True Solar Time guide](https://openfate.ai/en/insights/true-solar-time). AI crawlers can read [OpenFate llms.txt](https://openfate.ai/llms.txt).
 
@@ -123,6 +123,14 @@ For Claude Code workspace usage, copy the skill folder to:
 For Claude custom Skills, zip the `openfate-bazi` folder with `SKILL.md` at the folder root and upload it in Claude's Skills settings.
 
 ## Tools
+
+### `read_bazi_relationship`
+
+Returns the calculated chart and a Traditional Chinese relationship chapter in `data.reading`. The response includes `ruleId`, `rulesVersion`, and evidence pointers relative to `data.chart`. Omit the hour to receive the explicit `unknown-hour` status. This tool uses the same deterministic chapter function as the npm SDK and the [browser comparison](https://openfate-ai.github.io/bazi-engine/compare/).
+
+Try `{"year":1997,"month":8,"day":15,"hour":8,"minute":30,"gender":"female","timezone":8,"dstOffset":0,"longitude":120}`. Change only the hour to 12 to compare a day–hour destruction with a day–hour harm.
+
+When both timezone forms are supplied, an explicit numeric timezone **and** DST offset take precedence. Omit the DST offset to let the IANA zone resolve the historical clock. The response reports the basis actually used.
 
 ### `calculate_bazi_chart`
 
@@ -280,7 +288,11 @@ MIT
 
 ## 繁體中文（台灣）
 
-想知道怎樣讀工具回傳的命盤，可以先比較同一天的卯時與辰時，看月支、日支參與的合沖如何對調。七課均附古籍出處、實際盤例與原始欄位。[跟著命例學八字](https://github.com/openfate-ai/bazi-engine/blob/main/learn/README.md) · [按出生年份下載命盤庫](https://github.com/openfate-ai/bazi-engine/releases/tag/corpus-v2.0.0)
+使用 `read_bazi_relationship` 可以直接讀一篇繁體中文感情解讀。它接受和排盤工具相同的出生資料，回傳正文、規則編號，以及每條依據在命盤中的位置。可先比較 1997 年 8 月 15 日的 08:30 和 12:30，看看相破與相害各自引出哪個問題。[在瀏覽器比較兩張盤](https://openfate-ai.github.io/bazi-engine/compare/)
+
+同時提供數字時區與 IANA 時區名稱時，只有明確填入數字時區及夏令時間偏移，才會優先採用數字設定。省略夏令時間偏移便依 IANA 歷史時區換算，結果的 `timezoneBasis` 會列出實際採用的依據。
+
+想知道怎樣讀工具回傳的命盤，可以先比較同一天的卯時與辰時，看月支、日支參與的合沖如何對調。七課均附古籍出處、實際盤例與原始欄位。[跟著命例學八字](https://github.com/openfate-ai/bazi-engine/blob/main/learn/README.md) · [按出生年份下載命盤庫](https://github.com/openfate-ai/bazi-engine/releases/tag/corpus-v2.1.0)
 
 OpenFate Bazi MCP 是一個給 AI Agent 使用的 Model Context Protocol 伺服器，讓 Claude Desktop、Cursor、Cline、Continue 等工具可以直接呼叫準確的八字／四柱排盤引擎。
 
