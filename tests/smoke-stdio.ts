@@ -6,13 +6,15 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { getDefaultEnvironment, StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 /* Engine Types */
-import { calculateBaziChart, readBaziRelationship, type BaziInput, type BranchInteraction } from '@openfate/bazi-engine';
+import engine, { type BaziInput, type BranchInteraction } from '@openfate/bazi-engine';
 
 /* Node */
 import { spawnSync } from 'node:child_process';
 import { existsSync, realpathSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const { calculateBaziChart, readBaziRelationship } = engine;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

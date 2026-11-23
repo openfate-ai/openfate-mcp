@@ -2,15 +2,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 /* Engine */
-import {
-  calculateBaziChart,
-  readBaziRelationship,
-  resolveBaziTimezoneBasis,
-  detectInteractions,
-  generatePillarsFromSolar,
-  type BaziInput,
-  type DayBoundaryMode,
-} from '@openfate/bazi-engine';
+import engine, { type BaziInput, type DayBoundaryMode } from '@openfate/bazi-engine';
 import { calculateTrueSolarTime } from '@openfate/true-solar-time';
 
 /* Validation */
@@ -18,6 +10,10 @@ import { z } from 'zod';
 
 /* Node */
 import { createRequire } from 'node:module';
+
+// The SDK exposes CommonJS in both its npm package and the coordinated source checkout.
+const { calculateBaziChart, readBaziRelationship, resolveBaziTimezoneBasis,
+  detectInteractions, generatePillarsFromSolar } = engine;
 
 // Read from package.json instead of hardcoding, so the self-reported MCP
 // server version can't drift from the published npm version again.
@@ -47,7 +43,7 @@ const OPENFATE_LINKS = {
 
 const branchSchema = z.enum(['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']);
 
-const baziInputSchema = {
+const baziInputSchema = z.object({
   year: z.number().int().min(1800).max(2100).describe('Birth year. Use the lunar year when calendarType is lunar.'),
   month: z.number().int().min(1).max(12).describe('Birth month, 1-12.'),
   day: z.number().int().min(1).max(31).describe('Birth day, 1-31.'),
@@ -63,18 +59,18 @@ const baziInputSchema = {
   isLeapMonth: z.boolean().default(false).describe('Whether the lunar input month is a leap month. Used only when calendarType is lunar.'),
   enableTrueSolarTime: z.boolean().default(true).describe('Apply true solar time when longitude and timezone data are available.'),
   dayBoundaryMode: z.enum(['MIDNIGHT_00', 'ZI_HOUR_23']).default(DEFAULT_DAY_BOUNDARY_MODE).describe('Day-change rule. ZI_HOUR_23 means 23:00 starts the next day pillar.'),
-};
+}).meta({ additionalProperties: false });
 
-const interactionInputSchema = {
+const interactionInputSchema = z.object({
   yearBranch: branchSchema.describe('Natal year branch.'),
   monthBranch: branchSchema.describe('Natal month branch.'),
   dayBranch: branchSchema.describe('Natal day branch.'),
   hourBranch: branchSchema.optional().describe('Natal hour branch. Omit when birth time is unknown.'),
   annualBranch: branchSchema.optional().describe('Optional annual or target branch. Preserved as the annual pillar role, independently of repeated natal branches.'),
   dayunBranch: branchSchema.optional().describe('Optional Da Yun branch. Preserved as the dayun pillar role, independently of the annual and natal branches.'),
-};
+}).meta({ additionalProperties: false });
 
-const trueSolarInputSchema = {
+const trueSolarInputSchema = z.object({
   year: z.number().int().min(1800).max(2100),
   month: z.number().int().min(1).max(12),
   day: z.number().int().min(1).max(31),
@@ -84,15 +80,15 @@ const trueSolarInputSchema = {
   timezone: z.number().min(-14).max(14).optional().describe('UTC offset in hours for the clock time.'),
   timezoneId: z.string().optional().describe('IANA timezone ID, such as Asia/Shanghai.'),
   dstOffset: z.number().min(-2).max(2).optional().describe('Daylight saving offset in hours.'),
-};
+}).meta({ additionalProperties: false });
 
-const reverseLookupSchema = {
+const reverseLookupSchema = z.object({
   bazi: z.string().describe('Four pillars separated by spaces, for example: 戊寅 己未 己卯 辛未.'),
   startYear: z.number().int().min(1700).max(2100).default(DEFAULT_REVERSE_START_YEAR).describe('Start year for brute-force lookup.'),
   endYear: z.number().int().min(1700).max(2100).optional().describe('End year for brute-force lookup. Defaults to the current year.'),
   dayBoundaryMode: z.enum(['MIDNIGHT_00', 'ZI_HOUR_23']).default(DEFAULT_DAY_BOUNDARY_MODE).describe('Day-change rule used during lookup.'),
   limit: z.number().int().min(1).max(100).default(DEFAULT_REVERSE_LIMIT).describe('Maximum number of matching datetimes to return.'),
-};
+}).meta({ additionalProperties: false });
 
 interface ReverseMatch {
   solarDateTime: string;
