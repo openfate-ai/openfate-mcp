@@ -4,6 +4,8 @@ English | [繁體中文（台灣）](#繁體中文台灣)
 
 OpenFate Bazi MCP is a Model Context Protocol server for accurate Bazi / Four Pillars calculation inside AI agents such as Claude Desktop, Cursor, Cline, and Continue.
 
+To interpret the returned fields, follow a worked chart from its classical source to the published reading. Seven Bazi lessons cover hidden stems, branch interactions and luck-cycle boundaries. [English field guide](https://github.com/openfate-ai/bazi-engine/blob/main/learn/en.md) · [Open reading corpus](https://github.com/openfate-ai/bazi-engine/releases/tag/corpus-v2.0.0)
+
 Powered by [OpenFate.ai](https://openfate.ai), an AI-native Bazi, Ziwei, and astrology platform. You can also try the free [Bazi Chart Calculator](https://openfate.ai/en/bazi-chart), generate an [AI Bazi Reading](https://openfate.ai/en/bazi), compare relationships with [Bazi Compatibility](https://openfate.ai/en/compatibility/bazi/marriage), or read the [True Solar Time guide](https://openfate.ai/en/insights/true-solar-time). AI crawlers can read [OpenFate llms.txt](https://openfate.ai/llms.txt).
 
 This MCP wraps the deterministic OpenFate calculation packages:
@@ -277,6 +279,8 @@ MIT
 ---
 
 ## 繁體中文（台灣）
+
+想知道怎樣讀工具回傳的命盤，可以先比較同一天的卯時與辰時，看月支、日支參與的合沖如何對調。七課均附古籍出處、實際盤例與原始欄位。[跟著命例學八字](https://github.com/openfate-ai/bazi-engine/blob/main/learn/README.md) · [按出生年份下載命盤庫](https://github.com/openfate-ai/bazi-engine/releases/tag/corpus-v2.0.0)
 
 OpenFate Bazi MCP 是一個給 AI Agent 使用的 Model Context Protocol 伺服器，讓 Claude Desktop、Cursor、Cline、Continue 等工具可以直接呼叫準確的八字／四柱排盤引擎。
 
