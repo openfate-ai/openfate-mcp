@@ -1,32 +1,37 @@
 # OpenFate Bazi MCP
 
-Run Four Pillars calculations from Claude Desktop, Cursor or another MCP client. Ask for a relationship reading and the server returns the chapter in Traditional Chinese, the rule that selected it and the fields in the chart that support it. Birth data is processed locally.
+**Seven local BaZi tools for Claude Code, Claude Desktop and Cursor.** Give your assistant a birth time and it can calculate the Four Pillars, explain the solar-time correction or return a Traditional Chinese relationship chapter with the rule and chart fields behind it. The server runs on your computer and needs no OpenFate API key.
+
+**中文快速開始**：[下載桌面安裝包](https://github.com/openfate-ai/openfate-mcp/releases/download/v0.4.0/openfate-bazi-mcp-v0.4.0.mcpb) · [一行接入 Claude Code](#connect-zh) · [試問一張盤](#first-chart-zh)
 
 **[Install](#install)** · [Try the two-chart example](https://openfate-ai.github.io/bazi-engine/compare/) · [Tool reference](#tools) · [繁體中文](#zh-hant)
 
-To see what changes when only the birth hour changes, try 08:30 and 12:30 on August 15, 1997. You can repeat both calculations with the same SDK in Node. [JavaScript example and chart evidence](https://github.com/openfate-ai/bazi-engine) · [English field guide](https://github.com/openfate-ai/bazi-engine/blob/main/learn/en.md) · [Open reading corpus](https://github.com/openfate-ai/bazi-engine/releases/tag/corpus-v2.1.0)
+Building a charting website or looking for training data? The companion **OpenFate Bazi Engine** publishes the TypeScript SDK and a separate offline corpus of **1,112,328 chart samples and 14,460,264 life chapters**. The MCP server computes each chart on demand. [Engine and corpus downloads](https://github.com/openfate-ai/bazi-engine)
 
 ## Install
 
-Run it with `npx`:
+**Claude Desktop.** Download the [v0.4.0 desktop extension (.mcpb)](https://github.com/openfate-ai/openfate-mcp/releases/download/v0.4.0/openfate-bazi-mcp-v0.4.0.mcpb) and open it in a client that supports desktop extensions. The release includes its runtime dependencies. [Release notes](https://github.com/openfate-ai/openfate-mcp/releases/tag/v0.4.0)
 
-```bash
-npx -y @openfate/bazi-mcp
+**Claude Code.** With Node.js 20+ and `npx` on your path, run:
+
+```sh
+claude mcp add --transport stdio openfate-bazi -- npx -y @openfate/bazi-mcp@0.4.0
 ```
 
-For MCPB-compatible clients and Smithery, build the self-contained local bundle:
+Run `claude mcp get openfate-bazi` to check the connection. **Cursor and Cline** can launch the same stdio server using the JSON configurations below. Running `npx -y @openfate/bazi-mcp@0.4.0` directly starts a process that waits for an MCP client on stdin. [Claude Code MCP setup](https://code.claude.com/docs/en/mcp)
 
-```bash
-npm run mcpb:pack
-```
+### Try one chart
 
-The upload-ready artifact is written to `release/openfate-bazi-mcp-v<version>.mcpb`.
+Paste this into your connected client:
 
-To publish that local bundle to Smithery after `smithery auth login`:
+> Use `read_bazi_relationship` for August 15, 1997, female, 08:30 local time, UTC+8, no DST, longitude 120° east. Run it again at 12:30. Show both hour pillars, the rule IDs and the chart evidence for each reading.
 
-```bash
-npm run smithery:publish
-```
+| Local time | Hour pillar | Selected rule | Evidence in `data.chart` |
+| --- | --- | --- | --- |
+| 08:30 | 戊辰 | `day-hour-destruction` | `DESTRUCTION:day:丑\|hour:辰` |
+| 12:30 | 庚午 | `day-hour-harm` | `HARM:day:丑\|hour:午` |
+
+Look in `data.reading.evidence` for the chart pointer. In both examples the relationship ID is at `/interactions/1/id`. Omit the birth time entirely and the reading reports `unknown-hour`. [Open these two charts in the browser](https://openfate-ai.github.io/bazi-engine/compare/) · [Chapter rules](https://github.com/openfate-ai/bazi-engine/blob/main/src/readings/relationship.ts)
 
 ## Claude Desktop
 
@@ -55,6 +60,8 @@ If Claude Desktop cannot find `npx` on macOS, use the absolute path:
 ```
 
 ## Cursor
+
+Add the entry below to `.cursor/mcp.json` in your project, or to `~/.cursor/mcp.json` to make it available across projects. Keep any existing servers in the file. [Cursor MCP configuration](https://cursor.com/docs/mcp)
 
 ```jsonc
 {
@@ -100,6 +107,16 @@ For Claude Code workspace usage, copy the skill folder to:
 For Claude custom Skills, zip the `openfate-bazi` folder with `SKILL.md` at the folder root and upload it in Claude's Skills settings.
 
 ## Tools
+
+| If your user asks… | Call |
+| --- | --- |
+| “What are my four pillars and first luck cycle?” | `calculate_bazi_chart` |
+| “What changed in the reading when I changed the hour?” | `read_bazi_relationship` |
+| “Which two branches actually clash?” | `detect_bazi_interactions` |
+| “How did 08:30 on the clock become a different solar time?” | `calculate_true_solar_time` |
+| “I have four pillars from a book. Which dates could fit?” | `reverse_bazi_to_solar_times` |
+| “Does this tool change the day at 23:00?” | `get_openfate_bazi_policy` |
+| “Where can I open the chart or continue reading?” | `get_openfate_bazi_resources` |
 
 ### `read_bazi_relationship`
 
@@ -221,6 +238,8 @@ Chart results include enriched pillar facts (Ten Gods, hidden stems, Na Yin, Xun
 
 ## Development
 
+To build a desktop extension from a source checkout, install dependencies and run `npm run mcpb:pack`. The artifact is written to `release/openfate-bazi-mcp-v<version>.mcpb`. Maintainers publishing a local bundle to Smithery can use `npm run smithery:publish` after `smithery auth login`.
+
 ```bash
 npm install
 npm run build
@@ -243,7 +262,7 @@ Version 0.4 uses `@openfate/bazi-engine@^2.1.0`. The stdio smoke test calls the 
 
 ## Privacy
 
-This package does not phone home. Calculations run locally in the MCP subprocess.
+Chart calculations run in the local MCP subprocess. The host client receives the tool arguments and results and handles the conversation under its own settings.
 
 ## OpenFate Links
 
@@ -264,31 +283,36 @@ MIT
 
 ## 繁體中文（台灣）
 
-在 Claude Desktop、Cursor 或其他 MCP 客戶端呼叫 `read_bazi_relationship`，就能取得繁體中文感情章、規則編號及對應的命盤欄位。排盤在本機執行。
+**7 個本機八字工具**，把排盤、真太陽時換算和感情解讀接進 Claude 或 Cursor。輸入出生年月日時，工具會交回四柱；問起運日期，回傳結果也保留取節與折算依據。使用這套工具無需 OpenFate API 金鑰。
 
 可以先讀 1997 年 8 月 15 日的 08:30 和 12:30 兩張盤。前一篇問約好買菜卻沒買成，在哪一步漏了交接。後一篇問替對方做了哪個決定，讓原本的一番好意變了味。用瀏覽器打開兩篇，再用下面的工具輸入同一組資料，就能核對結果。[雙盤對照](https://openfate-ai.github.io/bazi-engine/compare/) · [命例教材](https://github.com/openfate-ai/bazi-engine/blob/main/learn/README.md) · [逐年命盤資料](https://github.com/openfate-ai/bazi-engine/releases/tag/corpus-v2.1.0)
 
 ## 安裝
 
-直接用 `npx` 執行：
+<a id="connect-zh"></a>
 
-```bash
-npx -y @openfate/bazi-mcp
+**Claude Desktop** 可直接[下載 v0.4.0 桌面擴充套件](https://github.com/openfate-ai/openfate-mcp/releases/download/v0.4.0/openfate-bazi-mcp-v0.4.0.mcpb)，在支援 MCPB 的客戶端開啟。安裝包已包含所需依賴。
+
+**Claude Code** 使用 Node.js 20 以上的環境，確認終端機找得到 `npx`，再執行：
+
+```sh
+claude mcp add --transport stdio openfate-bazi -- npx -y @openfate/bazi-mcp@0.4.0
 ```
 
-如果 MCP client 支援 MCPB，或需要發布到 Smithery，可以建立完整的本機安裝 bundle：
+用 `claude mcp get openfate-bazi` 查看連線狀態。Cursor 或 Cline 可使用下方 JSON 設定。若直接執行 `npx -y @openfate/bazi-mcp@0.4.0`，程式會等待客戶端從標準輸入送來請求。[Claude Code 安裝說明](https://code.claude.com/docs/en/mcp)
 
-```bash
-npm run mcpb:pack
-```
+<a id="first-chart-zh"></a>
 
-可上傳的檔案會輸出到 `release/openfate-bazi-mcp-v<version>.mcpb`。
+### 裝好後，把這句貼進對話
 
-完成 `smithery auth login` 後，可發布這個本機 bundle 到 Smithery：
+> 請用 `read_bazi_relationship` 比較兩張盤。1997 年 8 月 15 日，女，東經 120°、UTC+8、無夏令時間。第一張用 08:30，第二張用 12:30。請列出兩個時柱、各自選中的規則，以及命盤中對應的地支關係。
 
-```bash
-npm run smithery:publish
-```
+| 民用時刻 | 時柱 | 工具回傳的規則 | 正文從哪件事談起 |
+| --- | --- | --- | --- |
+| 08:30 | 戊辰 | `day-hour-destruction` | 兩人說好輪流買菜，哪一步交接漏了？ |
+| 12:30 | 庚午 | `day-hour-harm` | 菜買好了，但邀朋友來吃飯這件事，對方想自己決定嗎？ |
+
+兩次回傳的 `data.reading.evidence` 都可對回 `data.chart`。想改這段文字，打開同一份[解讀規則](https://github.com/openfate-ai/bazi-engine/blob/main/src/readings/relationship.ts)。想批次讀各年份的 13 章生活解讀，可到引擎專案下載 **111 萬筆排盤樣本、1,446 萬章生活解讀**的[開放資料集](https://github.com/openfate-ai/bazi-engine/releases/tag/corpus-v2.1.0)。
 
 ## Claude Desktop 設定
 
@@ -317,6 +341,8 @@ npm run smithery:publish
 ```
 
 ## Cursor 設定
+
+將下方設定併入專案的 `.cursor/mcp.json`。若要在不同專案使用，可放在 `~/.cursor/mcp.json`。[Cursor 設定檔位置](https://cursor.com/docs/mcp)
 
 ```jsonc
 {
@@ -362,6 +388,16 @@ skills/openfate-bazi/SKILL.md
 如果要做 Claude custom Skill，請把 `openfate-bazi` folder 壓成 zip，確保 `SKILL.md` 位於 folder root，再到 Claude 的 Skills 設定中上傳。
 
 ## 工具列表
+
+| 你想查什麼 | 工具 |
+| --- | --- |
+| 四柱、十神、九步大運與起運依據 | `calculate_bazi_chart` |
+| 感情章的正文、規則與命盤引用 | `read_bazi_relationship` |
+| 哪兩柱相沖，加入流年後多出哪些關係 | `detect_bazi_interactions` |
+| 出生鐘點換成真太陽時的結果 | `calculate_true_solar_time` |
+| 古書只留四柱，哪些公曆日期可能符合 | `reverse_bazi_to_solar_times` |
+| 換日或起運採用的設定 | `get_openfate_bazi_policy` |
+| 線上排盤與延伸閱讀入口 | `get_openfate_bazi_resources` |
 
 ### `read_bazi_relationship`
 
@@ -477,6 +513,8 @@ MCP 固定使用 `DAYUN_SECOND_V2`，呼叫端不能暗中切換起運規則。�
 
 ## 開發
 
+若要從原始碼製作桌面擴充套件，請先安裝依賴，再執行 `npm run mcpb:pack`。成品位於 `release/openfate-bazi-mcp-v<version>.mcpb`。維護者可於 Smithery 登入後使用 `npm run smithery:publish`。
+
 ```bash
 npm install
 npm run build
@@ -495,7 +533,7 @@ npm run smoke
 
 ## 隱私
 
-這個套件不會回傳資料到 OpenFate 伺服器。所有計算都在本機 MCP subprocess 內完成。
+排盤在本機 MCP 程序中執行。你選用的 AI 客戶端會收到工具輸入與結果，並依該客戶端的設定處理對話。
 
 ## OpenFate 連結
 
