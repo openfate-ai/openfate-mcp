@@ -6,13 +6,15 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { getDefaultEnvironment, StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 /* Engine Types */
-import type { BranchInteraction } from '@openfate/bazi-engine';
+import engine, { type BaziInput, type BranchInteraction } from '@openfate/bazi-engine';
 
 /* Node */
 import { spawnSync } from 'node:child_process';
 import { existsSync, realpathSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const { calculateBaziChart, readBaziRelationship } = engine;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -163,6 +165,44 @@ async function checkInteractionContract(client: Client): Promise<void> {
   );
 }
 
+async function checkReadingAndTimezone(client: Client): Promise<void> {
+  async function call(name: string, args: Record<string, unknown>) {
+    const result = await client.callTool({ name, arguments: args }) as ToolCallResult;
+    assert.notEqual(result.isError, true, result.content[0]?.text);
+    const payload = JSON.parse(result.content[0].text);
+    assert.deepEqual(result.structuredContent, payload);
+    return payload.data;
+  }
+
+  const policy = { dayBoundaryMode: 'ZI_HOUR_23', daYunTimingVersion: 'DAYUN_SECOND_V2' } as const;
+  const utc8 = { year: 1997, month: 8, day: 15, minute: 30, gender: 'female', longitude: 120, timezone: 8 } as const;
+  for (const [hour, rule] of [[8, 'day-hour-destruction'], [12, 'day-hour-harm']] as const) {
+    const input = { ...utc8, hour };
+    const { chart, reading } = await call('read_bazi_relationship', input);
+    const sdk = calculateBaziChart({ ...input, ...policy });
+    assert.deepEqual(chart, JSON.parse(JSON.stringify(sdk)));
+    assert.deepEqual(reading, readBaziRelationship(sdk));
+    assert.equal(reading.ruleId, rule);
+  }
+  const unknown = await call('read_bazi_relationship', { year: 1997, month: 8, day: 15, gender: 'female', longitude: 120 });
+  assert.equal(unknown.reading.status, 'unknown-hour');
+  assert.equal(unknown.chart.pillars.hour, null);
+  assert.equal(unknown.policy.trueSolarTimeApplied, false);
+
+  const clock = { year: 2020, month: 7, day: 15, hour: 23, minute: 10, gender: 'female',
+    longitude: -74, timezone: -5, timezoneId: 'America/New_York' } as const;
+  for (const input of [clock, { ...clock, dstOffset: 0 }, { ...clock, dstOffset: 1 }]) {
+    const sdk = calculateBaziChart({ ...input, ...policy } satisfies BaziInput);
+    const { chart, policy: returned } = await call('calculate_bazi_chart', input);
+    const { solarTime } = await call('calculate_true_solar_time', input);
+    assert.deepEqual(chart, JSON.parse(JSON.stringify(sdk)));
+    assert.equal(returned.timezoneBasis, 'dstOffset' in input ? -5 : 'America/New_York');
+    assert.equal(returned.timezoneBasis, sdk.metadata.timezoneBasis);
+    assert.equal(returned.trueSolarTimeApplied, sdk.metadata.trueSolarTimeApplied);
+    assert.equal(solarTime.trueSolarDateTime, sdk.solarTimeInfo?.trueSolarDateTime);
+  }
+}
+
 /** Exercise the packaged or source stdio server through the MCP client. */
 async function main(): Promise<void> {
   const serverEnvironment = getDefaultEnvironment();
@@ -199,6 +239,7 @@ async function main(): Promise<void> {
     const tools = await client.listTools();
     const toolNames = tools.tools.map((tool) => tool.name);
     assert.ok(toolNames.includes('calculate_bazi_chart'));
+    assert.ok(toolNames.includes('read_bazi_relationship'));
     assert.ok(toolNames.includes('detect_bazi_interactions'));
     assert.ok(toolNames.includes('calculate_true_solar_time'));
     assert.ok(toolNames.includes('reverse_bazi_to_solar_times'));
@@ -320,6 +361,7 @@ async function main(): Promise<void> {
     assert.ok(interactionPayload.data.interactions.length > 0);
 
     await checkInteractionContract(client);
+    await checkReadingAndTimezone(client);
 
     const policyResult = await client.callTool({
       name: 'get_openfate_bazi_policy',
