@@ -54,6 +54,8 @@ If the user only gives a city name, infer that longitude/timezone lookup may be 
 
 ## Tool Selection
 
+Use `read_bazi_corpus_chapter` for a published sample ID and a specific corpus topic. For comparisons call it once per ID, cite the chart paths and share the returned reader link.
+
 Use `read_bazi_relationship` for the open Traditional Chinese relationship chapter. Cite the returned rule and chart evidence. If the birth hour is unknown, retain the returned status.
 
 Use `calculate_bazi_chart` for full natal chart calculation.

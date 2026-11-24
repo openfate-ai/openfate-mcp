@@ -239,6 +239,21 @@ async function main(): Promise<void> {
     const tools = await client.listTools();
     const toolNames = tools.tools.map((tool) => tool.name);
     assert.ok(toolNames.includes('calculate_bazi_chart'));
+    assert.ok(toolNames.includes('read_bazi_corpus_chapter'));
+    const published = await client.callTool({ name: 'read_bazi_corpus_chapter',
+      arguments: { sampleId: '1991-10-18T08:30:00+08:00/female', topic: 'work' } }) as ToolCallResult;
+    assert.notEqual(published.isError, true);
+    const chapterPayload = JSON.parse(published.content[0].text);
+    assert.deepEqual(published.structuredContent, chapterPayload);
+    assert.equal(chapterPayload.data.chart.fourPillars, '辛未 戊戌 辛酉 壬辰');
+    assert.match(chapterPayload.data.chapter.parts[0].text, /時干壬為傷官/);
+    assert.equal(new URLSearchParams(new URL(chapterPayload.data.readerUrl).hash.slice(1)).get('id'), chapterPayload.data.chart.id);
+    for (const args of [
+      { sampleId: '2026-11-23T08:30:00+08:00/female', topic: 'work' },
+      { sampleId: '1991-10-18T08:30:00+08:00/female', topic: 'unknown' },
+    ]) {
+      assert.equal((await client.callTool({ name: 'read_bazi_corpus_chapter', arguments: args })).isError, true);
+    }
     assert.ok(toolNames.includes('read_bazi_relationship'));
     assert.ok(toolNames.includes('detect_bazi_interactions'));
     assert.ok(toolNames.includes('calculate_true_solar_time'));
