@@ -1,12 +1,15 @@
 # OpenFate Bazi MCP
 
-**Seven local BaZi tools for Claude Code, Claude Desktop and Cursor.** Give your assistant a birth time and it can calculate the Four Pillars, explain the solar-time correction or return a Traditional Chinese relationship chapter with the rule and chart fields behind it. The server runs on your computer and needs no OpenFate API key.
+**Seven local BaZi tools for Claude Code, Claude Desktop and Cursor.** Calculate the Four Pillars, inspect the solar-time correction or ask which chart fields selected a relationship reading. No OpenFate API key is required.
 
-**中文快速開始**：[下載桌面安裝包](https://github.com/openfate-ai/openfate-mcp/releases/download/v0.4.0/openfate-bazi-mcp-v0.4.0.mcpb) · [一行接入 Claude Code](#connect-zh) · [試問一張盤](#first-chart-zh)
+[**Download for Claude Desktop**](https://github.com/openfate-ai/openfate-mcp/releases/download/v0.4.0/openfate-bazi-mcp-v0.4.0.mcpb) · [Claude Code setup](#install) · [Cursor setup](#cursor) · [繁體中文安裝](#connect-zh)
 
-**[Install](#install)** · [Try the two-chart example](https://openfate-ai.github.io/bazi-engine/compare/) · [Tool reference](#tools) · [繁體中文](#zh-hant)
+<a href="#try-one-chart"><picture>
+  <source media="(max-width: 600px)" srcset="assets/cover-mobile.webp">
+  <img src="assets/cover.webp" alt="The same read_bazi_relationship tool returns day-hour-destruction at 08:30 and day-hour-harm at 12:30. Jump to the example request." width="100%">
+</picture></a>
 
-Building a charting website or looking for training data? The companion **OpenFate Bazi Engine** publishes the TypeScript SDK and a separate offline corpus of **1,112,328 chart samples and 14,460,264 life chapters**. The MCP server computes each chart on demand. [Engine and corpus downloads](https://github.com/openfate-ai/bazi-engine)
+Two birth times, two rule IDs. [Try this request](#try-one-chart) or [explore all seven tools](#tools). For the **1,112,328 chart samples and 14,460,264 life chapters** available offline, visit the [OpenFate Bazi Engine](https://github.com/openfate-ai/bazi-engine).
 
 ## Install
 
@@ -46,7 +49,10 @@ Look in `data.reading.evidence` for the chart pointer. In both examples the rela
 }
 ```
 
-If Claude Desktop cannot find `npx` on macOS, use the absolute path:
+<details>
+<summary>Claude Desktop cannot find npx on macOS</summary>
+
+Run `which npx` in your terminal and use the returned path for `command`. This example uses the Homebrew location.
 
 ```jsonc
 {
@@ -58,6 +64,8 @@ If Claude Desktop cannot find `npx` on macOS, use the absolute path:
   }
 }
 ```
+
+</details>
 
 ## Cursor
 
@@ -327,7 +335,10 @@ claude mcp add --transport stdio openfate-bazi -- npx -y @openfate/bazi-mcp@0.4.
 }
 ```
 
-如果 macOS 上 Claude Desktop 找不到 `npx`，可以改用絕對路徑：
+<details>
+<summary>macOS 找不到 npx 時，如何指定執行檔？</summary>
+
+先在終端機執行 `which npx`，將結果填入 `command`。以下以 Homebrew 的安裝路徑為例。
 
 ```jsonc
 {
@@ -339,6 +350,8 @@ claude mcp add --transport stdio openfate-bazi -- npx -y @openfate/bazi-mcp@0.4.
   }
 }
 ```
+
+</details>
 
 ## Cursor 設定
 
