@@ -3,6 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 /* Engine */
 import engine, { type BaziInput, type DayBoundaryMode } from '@openfate/bazi-engine';
+import { corpusTopics, readCorpusChapter } from '@openfate/bazi-engine/dist/corpus.mjs';
 import { calculateTrueSolarTime } from '@openfate/true-solar-time';
 
 /* Validation */
@@ -270,6 +271,35 @@ export function createServer(): McpServer {
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async input => chartPayload(input, true),
+  );
+
+  server.registerTool(
+    'read_bazi_corpus_chapter',
+    {
+      title: 'Read a Published Corpus Chapter',
+      description: 'Read one of the 13 Traditional Chinese chapters for a public sample ID in corpus v2.1.0. Use two calls to compare hours. Chapter parts cite paths relative to data.chart.',
+      inputSchema: z.object({
+        sampleId: z.string().max(40).describe('Canonical sample ID, e.g. 1991-10-18T08:30:00+08:00/female. Even hours at :30, UTC+8, from 1900-01-01 to 2026-11-22.'),
+        topic: z.enum(corpusTopics).describe('Chapter key, e.g. work, money or love.'),
+      }).strict(),
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    async ({ sampleId, topic }) => {
+      try {
+        const result = readCorpusChapter(sampleId, topic);
+        const hash = new URLSearchParams({ id: sampleId, chapter: topic });
+        const output = createSuccessPayload({
+          ...result,
+          readerUrl: 'https://openfate-ai.github.io/bazi-engine/library/#' + hash.toString(),
+          source: 'https://github.com/openfate-ai/bazi-engine/releases/tag/corpus-v2.1.0',
+          license: 'https://creativecommons.org/licenses/by/4.0/',
+        });
+        return { content: [{ type: 'text' as const, text: asJsonText(output) }], structuredContent: output };
+      } catch (error) {
+        if (!(error instanceof RangeError)) throw error;
+        return { isError: true, content: [{ type: 'text' as const, text: error.message }] };
+      }
+    },
   );
 
   server.registerTool(
