@@ -4,10 +4,12 @@
 
 [**Download for Claude Desktop**](https://github.com/openfate-ai/openfate-mcp/releases/download/v0.4.0/openfate-bazi-mcp-v0.4.0.mcpb) · [Claude Code setup](#install) · [Cursor setup](#cursor) · [繁體中文安裝](#connect-zh)
 
+<div>
 <a href="#try-one-chart"><picture>
   <source media="(max-width: 600px)" srcset="assets/cover-mobile.webp">
   <img src="assets/cover.webp" alt="The same read_bazi_relationship tool returns day-hour-destruction at 08:30 and day-hour-harm at 12:30. Jump to the example request." width="100%">
 </picture></a>
+</div>
 
 Two birth times, two rule IDs. [Try this request](#try-one-chart) or [explore all seven tools](#tools). For the **1,112,328 chart samples and 14,460,264 life chapters** available offline, visit the [OpenFate Bazi Engine](https://github.com/openfate-ai/bazi-engine).
 
